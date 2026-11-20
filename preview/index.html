@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Campus Complaint Management System Using AI</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- React & Babel -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+      background-color: #f8fafc;
+    }
+  </style>
+</head>
+<body class="text-slate-800 antialiased min-h-screen">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useMemo } = React;
+
+    const DEPARTMENTS = [
+      'Computer Science and Business Systems',
+      'Computer Science and Engineering',
+      'Information Technology',
+      'Electronics and Communication Engineering',
+      'Electrical and Electronics Engineering',
+      'Mechanical Engineering',
+      'Civil Engineering',
+      'Other'
+    ];
+
+    const CATEGORIES = [
+      'Classroom Projector',
+      'Wi-Fi / Internet',
+      'Drinking Water',
+      'Laboratory Equipment',
+      'Washroom Maintenance',
+      'Hostel Maintenance',
+      'Other'
+    ];
+
+    const DEMO_USERS = [
+      {
+        email: 'admin@campus.edu',
+        password: 'admin123',
+        name: 'Facility Admin Officer',
+        role: 'admin',
+        department: 'Campus Administration'
+      },
+      {
+        email: 'student@campus.edu',
+        password: 'student123',
+        name: 'Aarav Sharma',
+        role: 'student',
+        department: 'Computer Science and Engineering',
+        studentId: 'STU-2026-001'
+      }
+    ];
+
+    const INITIAL_COMPLAINTS = [
+      {
+        complaintId: 'CMP-2026-1001',
+        studentName: 'Aarav Sharma',
+        department: 'Computer Science and Engineering',
+        category: 'Classroom Projector',
+        description: 'Projector in Room LH-302 flickers repeatedly and turns off after 10 minutes of display. Scheduled lecture presentations are getting disrupted.',
+        location: 'Lecture Hall Complex LH-302',
+        status: 'In Progress',
+        adminRemarks: 'Assigned to AV technician Mr. Ramesh. Replacement HDMI cable and bulb ordered.',
+        aiPriority: 'High',
+        aiUrgencyScore: 72,
+        aiResolutionEtaHours: 12,
+        createdAt: new Date(Date.now() - 36 * 3600 * 1000).toISOString(),
+        timeline: [
+          { status: 'Pending', updatedAt: new Date(Date.now() - 36 * 3600 * 1000).toISOString(), note: 'Complaint registered by student.' },
+          { status: 'In Progress', updatedAt: new Date(Date.now() - 18 * 3600 * 1000).toISOString(), note: 'Technician dispatched to inspect projector bulb.' }
+        ]
+      },
+      {
+        complaintId: 'CMP-2026-1002',
+        studentName: 'Sneha Patel',
+        department: 'Information Technology',
+        category: 'Wi-Fi / Internet',
+        description: 'Wi-Fi access point in 3rd Floor Library Silent Zone is constantly dropping connections and shows DNS probe finished bad config error.',
+        location: 'Central Library, 3rd Floor',
+        status: 'Pending',
+        adminRemarks: '',
+        aiPriority: 'High',
+        aiUrgencyScore: 68,
+        aiResolutionEtaHours: 12,
+        createdAt: new Date(Date.now() - 14 * 3600 * 1000).toISOString(),
+        timeline: [
+          { status: 'Pending', updatedAt: new Date(Date.now() - 14 * 3600 * 1000).toISOString(), note: 'Complaint registered by student.' }
+        ]
+      },
+      {
+        complaintId: 'CMP-2026-1003',
+        studentName: 'Rohan Deshmukh',
+        department: 'Mechanical Engineering',
+        category: 'Drinking Water',
+        description: 'Water cooler near Workshop B is leaking heavily and the water dispensed is lukewarm with low pressure.',
+        location: 'Mechanical Workshop Block B',
+        status: 'Resolved',
+        adminRemarks: 'Compressor serviced and leak repaired with new valve. Water temperature verified cold.',
+        aiPriority: 'Medium',
+        aiUrgencyScore: 55,
+        aiResolutionEtaHours: 24,
+        createdAt: new Date(Date.now() - 72 * 3600 * 1000).toISOString(),
+        timeline: [
+          { status: 'Pending', updatedAt: new Date(Date.now() - 72 * 3600 * 1000).toISOString(), note: 'Complaint registered.' },
+          { status: 'In Progress', updatedAt: new Date(Date.now() - 48 * 3600 * 1000).toISOString(), note: 'Plumbing and HVAC team dispatched.' },
+          { status: 'Resolved', updatedAt: new Date(Date.now() - 20 * 3600 * 1000).toISOString(), note: 'Compressor serviced and valve replaced.' }
+        ]
+      },
+      {
+        complaintId: 'CMP-2026-1004',
+        studentName: 'Priya Sundaram',
+        department: 'Electronics and Communication Engineering',
+        category: 'Laboratory Equipment',
+        description: 'Digital Storage Oscilloscope at Bench 04 in Communication Systems Lab shows no trace and power button gives a spark when pressed.',
+        location: 'ECE Department, Lab 204, Bench 04',
+        status: 'In Progress',
+        adminRemarks: 'Safety hazard flagged by AI. Bench isolated immediately. Instrument sent for warranty calibration.',
+        aiPriority: 'Critical',
+        aiUrgencyScore: 92,
+        aiResolutionEtaHours: 4,
+        createdAt: new Date(Date.now() - 24 * 3600 * 1000).toISOString(),
+        timeline: [
+          { status: 'Pending', updatedAt: new Date(Date.now() - 24 * 3600 * 1000).toISOString(), note: 'Emergency spark hazard flagged.' },
+          { status: 'In Progress', updatedAt: new Date(Date.now() - 20 * 3600 * 1000).toISOString(), note: 'Lab attendant tagged instrument out-of-order.' }
+        ]
+      },
+      {
+        complaintId: 'CMP-2026-1005',
+        studentName: 'Kavya Nair',
+        department: 'Computer Science and Business Systems',
+        category: 'Washroom Maintenance',
+        description: 'Washroom on 2nd Floor of Academic Block A has continuous flush leakage and soap dispensers have been empty since yesterday.',
+        location: 'Academic Block A, 2nd Floor Restroom',
+        status: 'Pending',
+        adminRemarks: '',
+        aiPriority: 'Medium',
+        aiUrgencyScore: 48,
+        aiResolutionEtaHours: 24,
+        createdAt: new Date(Date.now() - 8 * 3600 * 1000).toISOString(),
+        timeline: [
+          { status: 'Pending', updatedAt: new Date(Date.now() - 8 * 3600 * 1000).toISOString(), note: 'Complaint registered.' }
+        ]
+      },
+      {
+        complaintId: 'CMP-2026-1006',
+        studentName: 'Aditya Verma',
+        department: 'Electrical and Electronics Engineering',
+        category: 'Hostel Maintenance',
+        description: 'Ceiling fan in Hostel Room 314 makes an extremely loud grinding noise and wobbles alarmingly on medium speed.',
+        location: 'Boys Hostel 2, Room 314',
+        status: 'Resolved',
+        adminRemarks: 'Capacitor and ball bearing replaced by hostel electrician.',
+        aiPriority: 'Medium',
+        aiUrgencyScore: 50,
+        aiResolutionEtaHours: 24,
+        createdAt: new Date(Date.now() - 96 * 3600 * 1000).toISOString(),
+        timeline: [
+          { status: 'Pending', updatedAt: new Date(Date.now() - 96 * 3600 * 1000).toISOString(), note: 'Complaint logged.' },
+          { status: 'In Progress', updatedAt: new Date(Date.now() - 60 * 3600 * 1000).toISOString(), note: 'Maintenance slip generated.' },
+          { status: 'Resolved', updatedAt: new Date(Date.now() - 30 * 3600 * 1000).toISOString(), note: 'Bearing replacement completed.' }
+        ]
+      },
+      {
+        complaintId: 'CMP-2026-1007',
+        studentName: 'Vikram Joshi',
+        department: 'Civil Engineering',
+        category: 'Laboratory Equipment',
+        description: 'Universal Testing Machine in Strength of Materials Lab is reporting calibration error code E-04 during tensile testing experiment.',
+        location: 'Civil SOM Lab, Ground Floor',
+        status: 'Pending',
+        adminRemarks: '',
+        aiPriority: 'High',
+        aiUrgencyScore: 70,
+        aiResolutionEtaHours: 12,
+        createdAt: new Date(Date.now() - 5 * 3600 * 1000).toISOString(),
+        timeline: [
+          { status: 'Pending', updatedAt: new Date(Date.now() - 5 * 3600 * 1000).toISOString(), note: 'Registered by student lab representative.' }
+        ]
+      }
+    ];
+
+    function analyzeAiText(text = '') {
+      const lower = text.toLowerCase();
+      let priority = 'Medium';
+      let urgency = 45;
+      let etaHours = 24;
+      let suggestedCategory = null;
+
+      const catKeywords = {
+        'Classroom Projector': ['projector', 'hdmi', 'vga', 'screen', 'lamp', 'bulb', 'flicker'],
+        'Wi-Fi / Internet': ['wifi', 'wi-fi', 'internet', 'router', 'network', 'lan', 'disconnect'],
+        'Drinking Water': ['water', 'cooler', 'filter', 'purifier', 'drinking', 'tap', 'leak'],
+        'Laboratory Equipment': ['lab', 'oscilloscope', 'multimeter', 'microscope', 'pc', 'apparatus'],
+        'Washroom Maintenance': ['washroom', 'toilet', 'flush', 'restroom', 'plumbing', 'drain', 'soap'],
+        'Hostel Maintenance': ['hostel', 'room', 'bed', 'fan', 'tube light', 'almirah', 'geyser']
+      };
+
+      for (const [cat, words] of Object.entries(catKeywords)) {
+        if (words.some(w => lower.includes(w))) {
+          suggestedCategory = cat;
+          break;
+        }
+      }
+
+      const criticalWords = ['spark', 'fire', 'shock', 'electric', 'short circuit', 'emergency', 'smoke', 'flood'];
+      const highWords = ['exam', 'test', 'deadline', 'viva', 'not working at all', 'urgent'];
+
+      if (criticalWords.some(w => lower.includes(w))) {
+        urgency = 92;
+        priority = 'Critical';
+        etaHours = 4;
+      } else if (highWords.some(w => lower.includes(w))) {
+        urgency = 72;
+        priority = 'High';
+        etaHours = 12;
+      }
+
+      return { priority, urgency, etaHours, suggestedCategory };
+    }
+
+    function App() {
+      // Storage states
+      const [complaints, setComplaints] = useState(() => {
+        try {
+          const raw = localStorage.getItem('smart_campus_complaints_v1');
+          return raw ? JSON.parse(raw) : INITIAL_COMPLAINTS;
+        } catch {
+          return INITIAL_COMPLAINTS;
+        }
+      });
+
+      const [currentUser, setCurrentUser] = useState(() => {
+        try {
+          const raw = localStorage.getItem('smart_campus_user_v1');
+          return raw ? JSON.parse(raw) : null;
+        } catch {
+          return null;
+        }
+      });
+
+      const [showLogin, setShowLogin] = useState(() => !localStorage.getItem('smart_campus_user_v1'));
+      const [loginRole, setLoginRole] = useState('student');
+      const [loginEmail, setLoginEmail] = useState('');
+      const [loginPassword, setLoginPassword] = useState('');
+      const [loginError, setLoginError] = useState('');
+
+      const [activeTab, setActiveTab] = useState(() => (currentUser?.role === 'admin' ? 'admin' : 'student'));
+      const [studentTab, setStudentTab] = useState('submit');
+      const [adminView, setAdminView] = useState('complaints');
+
+      // Filters
+      const [statusFilter, setStatusFilter] = useState('All');
+      const [categoryFilter, setCategoryFilter] = useState('All');
+      const [departmentFilter, setDepartmentFilter] = useState('All');
+      const [searchTerm, setSearchTerm] = useState('');
+
+      // Detail Modal
+      const [selectedComplaint, setSelectedComplaint] = useState(null);
+
+      // Track by ID
+      const [trackInputId, setTrackInputId] = useState('');
+      const [trackedComplaint, setTrackedComplaint] = useState(null);
+      const [trackError, setTrackError] = useState('');
+
+      // Form state
+      const [formData, setFormData] = useState({
+        studentName: currentUser?.name || '',
+        department: currentUser?.department || '',
+        category: '',
+        description: '',
+        location: ''
+      });
+      const [formErrors, setFormErrors] = useState({});
+      const [justSubmitted, setJustSubmitted] = useState(null);
+      const [toastMsg, setToastMsg] = useState('');
+
+      useEffect(() => {
+        if (currentUser?.name) {
+          setFormData(prev => ({
+            ...prev,
+            studentName: currentUser.name,
+            department: currentUser.department || prev.department
+          }));
+        }
+      }, [currentUser]);
+
+      useEffect(() => {
+        localStorage.setItem('smart_campus_complaints_v1', JSON.stringify(complaints));
+      }, [complaints]);
+
+      const showToast = (msg) => {
+        setToastMsg(msg);
+        setTimeout(() => setToastMsg(''), 3500);
+      };
+
+      const stats = useMemo(() => {
+        const total = complaints.length;
+        const pending = complaints.filter(c => c.status === 'Pending').length;
+        const inProgress = complaints.filter(c => c.status === 'In Progress').length;
+        const resolved = complaints.filter(c => c.status === 'Resolved').length;
+        const critical = complaints.filter(c => c.aiPriority === 'Critical').length;
+        const resolutionRate = total > 0 ? Math.round((resolved / total) * 100) : 0;
+        return { total, pending, inProgress, resolved, critical, resolutionRate };
+      }, [complaints]);
+
+      const filteredComplaints = useMemo(() => {
+        return complaints.filter(c => {
+          const matchStatus = statusFilter === 'All' || c.status === statusFilter;
+          const matchCat = categoryFilter === 'All' || c.category === categoryFilter;
+          const matchDept = departmentFilter === 'All' || c.department === departmentFilter;
+          const q = searchTerm.toLowerCase().trim();
+          const matchSearch = !q ||
+            c.complaintId.toLowerCase().includes(q) ||
+            c.studentName.toLowerCase().includes(q) ||
+            c.description.toLowerCase().includes(q) ||
+            (c.location && c.location.toLowerCase().includes(q));
+          return matchStatus && matchCat && matchDept && matchSearch;
+        });
+      }, [complaints, statusFilter, categoryFilter, departmentFilter, searchTerm]);
+
+      const liveAi = useMemo(() => {
+        return analyzeAiText(formData.description);
+      }, [formData.description]);
+
+      const handleLogin = (e) => {
+        e && e.preventDefault();
+        setLoginError('');
+        const user = DEMO_USERS.find(
+          u => u.email.toLowerCase() === loginEmail.toLowerCase().trim() && u.password === loginPassword
+        );
+        if (!user) {
+          setLoginError('Invalid credentials. Use demo credentials or 1-Click button.');
+          return;
+        }
+        if (user.role !== loginRole) {
+          setLoginError(`Account role is ${user.role}, please switch to ${user.role} tab.`);
+          return;
+        }
+        setCurrentUser(user);
+        localStorage.setItem('smart_campus_user_v1', JSON.stringify(user));
+        setShowLogin(false);
+        setActiveTab(user.role === 'admin' ? 'admin' : 'student');
+        showToast(`Welcome back, ${user.name}!`);
+      };
+
+      const handleQuickLogin = (roleToLogin) => {
+        const user = DEMO_USERS.find(u => u.role === roleToLogin);
+        if (user) {
+          setCurrentUser(user);
+          localStorage.setItem('smart_campus_user_v1', JSON.stringify(user));
+          setShowLogin(false);
+          setActiveTab(user.role === 'admin' ? 'admin' : 'student');
+          showToast(`Signed in as ${user.name} (${user.role.toUpperCase()})`);
+        }
+      };
+
+      const handleLogout = () => {
+        localStorage.removeItem('smart_campus_user_v1');
+        setCurrentUser(null);
+        setShowLogin(true);
+        showToast('You have been signed out.');
+      };
+
+      const handleFormSubmit = (e) => {
+        e.preventDefault();
+        const errs = {};
+        if (!formData.studentName.trim()) errs.studentName = 'Student name is required';
+        if (!formData.department) errs.department = 'Please select a department';
+        if (!formData.category) errs.category = 'Please select a category';
+        if (!formData.description.trim() || formData.description.trim().length < 10) {
+          errs.description = 'Description must be at least 10 characters long';
+        }
+
+        if (Object.keys(errs).length > 0) {
+          setFormErrors(errs);
+          return;
+        }
+
+        setFormErrors({});
+        const year = new Date().getFullYear();
+        let maxSeq = 1000;
+        complaints.forEach(c => {
+          if (c.complaintId && c.complaintId.startsWith(`CMP-${year}-`)) {
+            const num = parseInt(c.complaintId.split('-')[2], 10);
+            if (!isNaN(num) && num > maxSeq) maxSeq = num;
+          }
+        });
+        const newId = `CMP-${year}-${maxSeq + 1}`;
+        const ai = analyzeAiText(`${formData.description} ${formData.location}`);
+
+        const newComplaint = {
+          complaintId: newId,
+          studentName: formData.studentName.trim(),
+          department: formData.department,
+          category: formData.category,
+          description: formData.description.trim(),
+          location: formData.location.trim() || 'Campus Premises',
+          status: 'Pending',
+          adminRemarks: '',
+          aiPriority: ai.priority,
+          aiUrgencyScore: ai.urgency,
+          aiResolutionEtaHours: ai.etaHours,
+          createdAt: new Date().toISOString(),
+          timeline: [
+            { status: 'Pending', updatedAt: new Date().toISOString(), note: 'Complaint registered by student.' }
+          ]
+        };
+
+        setComplaints(prev => [newComplaint, ...prev]);
+        setJustSubmitted(newComplaint);
+        showToast(`Complaint ${newId} submitted successfully!`);
+      };
+
+      const handleTrackSearch = (idToSearch) => {
+        const id = (idToSearch || trackInputId).trim();
+        if (!id) {
+          setTrackError('Please enter a complaint ID (e.g., CMP-2026-1001)');
+          setTrackedComplaint(null);
+          return;
+        }
+
+        const match = complaints.find(c => c.complaintId.toLowerCase() === id.toLowerCase());
+        if (match) {
+          setTrackedComplaint(match);
+          setTrackError('');
+        } else {
+          setTrackedComplaint(null);
+          setTrackError(`No complaint found with ID "${id}". Please verify and try again.`);
+        }
+      };
+
+      const handleStatusChange = (complaintId, newStatus, remarks = '') => {
+        setComplaints(prev => prev.map(c => {
+          if (c.complaintId === complaintId) {
+            const updatedTimeline = [...(c.timeline || [])];
+            updatedTimeline.push({
+              status: newStatus,
+              updatedAt: new Date().toISOString(),
+              note: remarks ? `Status updated to ${newStatus}: ${remarks}` : `Status changed to ${newStatus}`
+            });
+            return {
+              ...c,
+              status: newStatus,
+              adminRemarks: remarks || c.adminRemarks,
+              timeline: updatedTimeline
+            };
+          }
+          return c;
+        }));
+
+        if (selectedComplaint && selectedComplaint.complaintId === complaintId) {
+          setSelectedComplaint(prev => ({
+            ...prev,
+            status: newStatus,
+            adminRemarks: remarks || prev.adminRemarks
+          }));
+        }
+
+        showToast(`Complaint ${complaintId} marked as ${newStatus}`);
+      };
+
+      return (
+        <div>
+          {/* Header */}
+          <header className="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-200 shadow-sm">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md">
+                  <span className="font-extrabold text-lg">🎓</span>
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-extrabold text-lg text-slate-900 tracking-tight">Smart Campus</span>
+                    <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">AI Triage</span>
+                  </div>
+                  <p className="text-xs text-slate-500 hidden sm:block">Complaint Management & Facilities System</p>
+                </div>
+              </div>
+
+              {currentUser && (
+                <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
+                  <button
+                    onClick={() => setActiveTab('student')}
+                    className={`px-4 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-all ${
+                      activeTab === 'student' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    Student Portal
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (currentUser?.role !== 'admin') {
+                        showToast('Administrator login required for Admin Dashboard.');
+                        setShowLogin(true);
+                        setLoginRole('admin');
+                        return;
+                      }
+                      setActiveTab('admin');
+                    }}
+                    className={`px-4 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-all ${
+                      activeTab === 'admin' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    Admin Dashboard
+                  </button>
+                </div>
+              )}
+
+              <div className="flex items-center gap-3">
+                {currentUser ? (
+                  <div className="flex items-center gap-2">
+                    <div className="text-right hidden sm:block">
+                      <div className="text-xs font-bold text-slate-900">{currentUser.name}</div>
+                      <span className="text-[10px] uppercase font-bold text-blue-600">{currentUser.role}</span>
+                    </div>
+                    <button
+                      onClick={handleLogout}
+                      className="px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-rose-50 hover:text-rose-600 transition-colors"
+                    >
+                      Sign Out
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setShowLogin(true)}
+                    className="px-4 py-1.5 rounded-xl bg-blue-600 text-white font-bold text-xs hover:bg-blue-700 transition-all shadow"
+                  >
+                    Sign In
+                  </button>
+                )}
+              </div>
+            </div>
+          </header>
+
+          <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            {/* LOGIN VIEW */}
+            {showLogin ? (
+              <div className="max-w-md mx-auto bg-white rounded-3xl border border-slate-200 shadow-xl p-8 space-y-6">
+                <div className="text-center">
+                  <div className="w-12 h-12 bg-blue-600 text-white rounded-2xl flex items-center justify-center mx-auto text-xl font-bold shadow-md">
+                    {loginRole === 'admin' ? '🛡️' : '🎓'}
+                  </div>
+                  <h2 className="text-2xl font-extrabold text-slate-900 mt-3">
+                    {loginRole === 'admin' ? 'Admin Login' : 'Student Login'}
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-1">Smart Campus Facility Management System</p>
+
+                  <div className="mt-4 grid grid-cols-2 gap-1 bg-slate-100 p-1 rounded-2xl border">
+                    <button
+                      type="button"
+                      onClick={() => setLoginRole('student')}
+                      className={`py-2 rounded-xl text-xs font-bold transition-all ${
+                        loginRole === 'student' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-600'
+                      }`}
+                    >
+                      Student Portal
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setLoginRole('admin')}
+                      className={`py-2 rounded-xl text-xs font-bold transition-all ${
+                        loginRole === 'admin' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-600'
+                      }`}
+                    >
+                      Admin Console
+                    </button>
+                  </div>
+                </div>
+
+                <div className="p-3 bg-indigo-50 border border-indigo-100 rounded-2xl flex items-center justify-between text-xs">
+                  <div>
+                    <span className="font-bold text-slate-800">
+                      {loginRole === 'student' ? 'Demo Student Credentials' : 'Demo Admin Credentials'}
+                    </span>
+                    <p className="text-[11px] text-slate-500">
+                      {loginRole === 'student' ? 'student@campus.edu • student123' : 'admin@campus.edu • admin123'}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleQuickLogin(loginRole)}
+                    className="px-3 py-1.5 rounded-xl bg-indigo-600 text-white font-bold text-xs shadow hover:bg-indigo-700"
+                  >
+                    1-Click Fill
+                  </button>
+                </div>
+
+                {loginError && (
+                  <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs font-semibold">
+                    ⚠️ {loginError}
+                  </div>
+                )}
+
+                <form onSubmit={handleLogin} className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-bold uppercase text-slate-700 mb-1">Email</label>
+                    <input
+                      type="email"
+                      value={loginEmail}
+                      onChange={e => setLoginEmail(e.target.value)}
+                      placeholder={loginRole === 'admin' ? 'admin@campus.edu' : 'student@campus.edu'}
+                      className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm outline-none focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold uppercase text-slate-700 mb-1">Password</label>
+                    <input
+                      type="password"
+                      value={loginPassword}
+                      onChange={e => setLoginPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm outline-none focus:border-blue-500"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow transition-all cursor-pointer"
+                  >
+                    Sign In
+                  </button>
+                </form>
+
+                <div className="text-center pt-2 border-t">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowLogin(false);
+                      setActiveTab('student');
+                      setStudentTab('track');
+                    }}
+                    className="text-xs text-blue-600 hover:underline font-bold"
+                  >
+                    Just want to track an existing ticket? Track without login →
+                  </button>
+                </div>
+              </div>
+            ) : (
+              /* LOGGED IN PORTALS */
+              activeTab === 'student' ? (
+                /* STUDENT PORTAL */
+                <div className="space-y-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-4">
+                    <div>
+                      <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Student Facility Desk</h1>
+                      <p className="text-xs sm:text-sm text-slate-500 mt-1">
+                        Logged in as <strong>{currentUser?.name || 'Student'}</strong> ({currentUser?.department || 'CSE'})
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border">
+                      <button
+                        onClick={() => setStudentTab('submit')}
+                        className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                          studentTab === 'submit' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-600'
+                        }`}
+                      >
+                        Submit Complaint
+                      </button>
+                      <button
+                        onClick={() => setStudentTab('track')}
+                        className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                          studentTab === 'track' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-600'
+                        }`}
+                      >
+                        Track Status
+                      </button>
+                      <button
+                        onClick={() => setStudentTab('list')}
+                        className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                          studentTab === 'list' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-600'
+                        }`}
+                      >
+                        All Submitted ({complaints.length})
+                      </button>
+                    </div>
+                  </div>
+
+                  {studentTab === 'submit' && (
+                    <div className="max-w-2xl mx-auto">
+                      {justSubmitted ? (
+                        <div className="bg-white rounded-2xl p-8 border border-slate-200 shadow-lg text-center space-y-5">
+                          <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-3xl mx-auto">✓</div>
+                          <h2 className="text-2xl font-bold text-slate-900">Complaint Submitted Successfully!</h2>
+                          <p className="text-sm text-slate-500">Your complaint tracking ID:</p>
+                          <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl inline-block w-full">
+                            <span className="text-xs uppercase font-bold text-slate-400 block mb-1">Unique Complaint ID</span>
+                            <span className="text-3xl font-extrabold text-blue-600 font-mono tracking-wider">{justSubmitted.complaintId}</span>
+                          </div>
+                          <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
+                            <button
+                              onClick={() => {
+                                setTrackInputId(justSubmitted.complaintId);
+                                handleTrackSearch(justSubmitted.complaintId);
+                                setStudentTab('track');
+                              }}
+                              className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow"
+                            >
+                              Track This Complaint
+                            </button>
+                            <button
+                              onClick={() => {
+                                setJustSubmitted(null);
+                                setFormData({
+                                  studentName: currentUser?.name || '',
+                                  department: currentUser?.department || '',
+                                  category: '',
+                                  description: '',
+                                  location: ''
+                                });
+                              }}
+                              className="px-5 py-2.5 rounded-xl bg-slate-100 text-slate-700 font-bold text-sm"
+                            >
+                              Submit Another
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8">
+                          <h2 className="text-xl font-bold text-slate-900 mb-5">Register a New Facility Complaint</h2>
+                          <form onSubmit={handleFormSubmit} className="space-y-5">
+                            <div>
+                              <label className="block text-xs font-bold uppercase text-slate-700 mb-1">Student Name *</label>
+                              <input
+                                type="text"
+                                value={formData.studentName}
+                                onChange={e => setFormData({ ...formData, studentName: e.target.value })}
+                                className="w-full px-3.5 py-2.5 rounded-xl border text-sm"
+                              />
+                              {formErrors.studentName && <p className="text-xs text-rose-500 mt-1">{formErrors.studentName}</p>}
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              <div>
+                                <label className="block text-xs font-bold uppercase text-slate-700 mb-1">Department *</label>
+                                <select
+                                  value={formData.department}
+                                  onChange={e => setFormData({ ...formData, department: e.target.value })}
+                                  className="w-full px-3.5 py-2.5 rounded-xl border text-sm"
+                                >
+                                  <option value="">-- Select Department --</option>
+                                  {DEPARTMENTS.map(d => <option key={d} value={d}>{d}</option>)}
+                                </select>
+                                {formErrors.department && <p className="text-xs text-rose-500 mt-1">{formErrors.department}</p>}
+                              </div>
+                              <div>
+                                <label className="block text-xs font-bold uppercase text-slate-700 mb-1">Category *</label>
+                                <select
+                                  value={formData.category}
+                                  onChange={e => setFormData({ ...formData, category: e.target.value })}
+                                  className="w-full px-3.5 py-2.5 rounded-xl border text-sm"
+                                >
+                                  <option value="">-- Select Category --</option>
+                                  {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                                </select>
+                                {formErrors.category && <p className="text-xs text-rose-500 mt-1">{formErrors.category}</p>}
+                              </div>
+                            </div>
+
+                            <div>
+                              <label className="block text-xs font-bold uppercase text-slate-700 mb-1">Location / Room No.</label>
+                              <input
+                                type="text"
+                                value={formData.location}
+                                onChange={e => setFormData({ ...formData, location: e.target.value })}
+                                placeholder="e.g., Room LH-302, Workshop B"
+                                className="w-full px-3.5 py-2.5 rounded-xl border text-sm"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-xs font-bold uppercase text-slate-700 mb-1">Description *</label>
+                              <textarea
+                                rows="4"
+                                value={formData.description}
+                                onChange={e => setFormData({ ...formData, description: e.target.value })}
+                                placeholder="Describe the problem clearly..."
+                                className="w-full px-3.5 py-2.5 rounded-xl border text-sm"
+                              ></textarea>
+                              {formErrors.description && <p className="text-xs text-rose-500 mt-1">{formErrors.description}</p>}
+
+                              {formData.description.trim().length >= 4 && (
+                                <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs flex justify-between items-center">
+                                  <span>✨ AI Priority: <strong>{liveAi.priority}</strong> ({liveAi.urgency}% urgency) • SLA ~{liveAi.etaHours}h</span>
+                                  {liveAi.suggestedCategory && liveAi.suggestedCategory !== formData.category && (
+                                    <button
+                                      type="button"
+                                      onClick={() => setFormData({ ...formData, category: liveAi.suggestedCategory })}
+                                      className="px-2 py-1 bg-blue-600 text-white rounded font-bold text-[11px]"
+                                    >
+                                      Apply "{liveAi.suggestedCategory}"
+                                    </button>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+
+                            <button type="submit" className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-xl shadow cursor-pointer">
+                              Submit Complaint & Generate ID
+                            </button>
+                          </form>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {studentTab === 'track' && (
+                    <div className="max-w-2xl mx-auto space-y-6">
+                      <div className="bg-white rounded-2xl border p-6">
+                        <h2 className="text-xl font-bold text-slate-900 mb-2">Track Complaint</h2>
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            value={trackInputId}
+                            onChange={e => setTrackInputId(e.target.value)}
+                            placeholder="Enter Complaint ID (e.g. CMP-2026-1001)"
+                            className="flex-1 px-4 py-2.5 rounded-xl border text-sm"
+                          />
+                          <button
+                            onClick={() => handleTrackSearch(trackInputId)}
+                            className="px-6 py-2.5 bg-blue-600 text-white font-bold text-sm rounded-xl"
+                          >
+                            Track
+                          </button>
+                        </div>
+                        {trackError && <div className="mt-3 text-xs text-rose-600 font-bold">{trackError}</div>}
+                      </div>
+
+                      {trackedComplaint && (
+                        <div className="bg-white rounded-2xl border p-6 space-y-5">
+                          <div className="flex justify-between items-center border-b pb-3">
+                            <div>
+                              <span className="font-mono text-2xl font-bold text-blue-600">{trackedComplaint.complaintId}</span>
+                              <p className="text-xs text-slate-500">Student: {trackedComplaint.studentName} ({trackedComplaint.department})</p>
+                            </div>
+                            <span className="px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                              {trackedComplaint.status}
+                            </span>
+                          </div>
+
+                          <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                            <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl font-bold text-blue-800">1. Submitted</div>
+                            <div className={`p-3 rounded-xl border ${trackedComplaint.status !== 'Pending' ? 'bg-blue-50 border-blue-200 font-bold text-blue-800' : 'bg-slate-50 text-slate-400'}`}>2. In Progress</div>
+                            <div className={`p-3 rounded-xl border ${trackedComplaint.status === 'Resolved' ? 'bg-emerald-50 border-emerald-200 font-bold text-emerald-800' : 'bg-slate-50 text-slate-400'}`}>3. Resolved</div>
+                          </div>
+
+                          <div className="p-4 bg-slate-50 rounded-xl text-xs space-y-1">
+                            <div><strong>Category:</strong> {trackedComplaint.category}</div>
+                            <div><strong>Location:</strong> {trackedComplaint.location}</div>
+                            <div><strong>Description:</strong> {trackedComplaint.description}</div>
+                            {trackedComplaint.adminRemarks && <div><strong>Admin Remarks:</strong> {trackedComplaint.adminRemarks}</div>}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {studentTab === 'list' && (
+                    <div className="bg-white rounded-2xl border p-6">
+                      <h2 className="text-lg font-bold mb-4">All Registered Complaints</h2>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs">
+                          <thead className="bg-slate-50 font-bold text-slate-500 border-b">
+                            <tr>
+                              <th className="p-3">ID</th>
+                              <th className="p-3">Student</th>
+                              <th className="p-3">Category</th>
+                              <th className="p-3">Description</th>
+                              <th className="p-3">Status</th>
+                              <th className="p-3 text-right">Action</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y">
+                            {complaints.map(c => (
+                              <tr key={c.complaintId} className="hover:bg-slate-50">
+                                <td className="p-3 font-mono font-bold text-blue-600">{c.complaintId}</td>
+                                <td className="p-3 font-semibold">{c.studentName}</td>
+                                <td className="p-3">{c.category}</td>
+                                <td className="p-3 max-w-xs truncate">{c.description}</td>
+                                <td className="p-3"><span className="px-2 py-0.5 rounded font-bold bg-slate-100">{c.status}</span></td>
+                                <td className="p-3 text-right">
+                                  <button
+                                    onClick={() => {
+                                      setTrackInputId(c.complaintId);
+                                      handleTrackSearch(c.complaintId);
+                                      setStudentTab('track');
+                                    }}
+                                    className="text-blue-600 font-bold hover:underline"
+                                  >
+                                    Track
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                /* ADMIN DASHBOARD */
+                <div className="space-y-6">
+                  <div>
+                    <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Facilities Administration Console</h1>
+                    <p className="text-xs sm:text-sm text-slate-500 mt-1">Logged in as Administrator: {currentUser?.name}</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="p-5 rounded-2xl bg-white border border-blue-200 shadow-sm">
+                      <span className="text-xs font-bold uppercase text-slate-500 block mb-1">Total Complaints</span>
+                      <span className="text-3xl font-extrabold">{stats.total}</span>
+                    </div>
+                    <div className="p-5 rounded-2xl bg-white border border-amber-200 shadow-sm">
+                      <span className="text-xs font-bold uppercase text-slate-500 block mb-1">Pending</span>
+                      <span className="text-3xl font-extrabold text-amber-600">{stats.pending}</span>
+                    </div>
+                    <div className="p-5 rounded-2xl bg-white border border-indigo-200 shadow-sm">
+                      <span className="text-xs font-bold uppercase text-slate-500 block mb-1">In Progress</span>
+                      <span className="text-3xl font-extrabold text-indigo-600">{stats.inProgress}</span>
+                    </div>
+                    <div className="p-5 rounded-2xl bg-white border border-emerald-200 shadow-sm">
+                      <span className="text-xs font-bold uppercase text-slate-500 block mb-1">Resolved</span>
+                      <span className="text-3xl font-extrabold text-emerald-600">{stats.resolved}</span>
+                    </div>
+                  </div>
+
+                  <div className="bg-white rounded-2xl border shadow-sm overflow-hidden">
+                    <div className="p-6 border-b flex justify-between items-center">
+                      <h2 className="text-lg font-bold">Complaints Table ({filteredComplaints.length})</h2>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-xs">
+                        <thead className="bg-slate-50 font-bold text-slate-500 border-b">
+                          <tr>
+                            <th className="p-3">ID</th>
+                            <th className="p-3">Student & Dept</th>
+                            <th className="p-3">Category</th>
+                            <th className="p-3">Description</th>
+                            <th className="p-3">Status</th>
+                            <th className="p-3 text-right">Action</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y">
+                          {filteredComplaints.map(item => (
+                            <tr key={item.complaintId} className="hover:bg-slate-50">
+                              <td className="p-3 font-mono font-bold text-blue-600">{item.complaintId}</td>
+                              <td className="p-3"><strong>{item.studentName}</strong><div className="text-[10px] text-slate-500">{item.department}</div></td>
+                              <td className="p-3">{item.category}</td>
+                              <td className="p-3 max-w-xs truncate">{item.description}</td>
+                              <td className="p-3">
+                                <select
+                                  value={item.status}
+                                  onChange={e => handleStatusChange(item.complaintId, e.target.value)}
+                                  className="px-2 py-1 border rounded text-xs font-bold"
+                                >
+                                  <option value="Pending">Pending</option>
+                                  <option value="In Progress">In Progress</option>
+                                  <option value="Resolved">Resolved</option>
+                                </select>
+                              </td>
+                              <td className="p-3 text-right">
+                                <button
+                                  onClick={() => setSelectedComplaint(item)}
+                                  className="px-2.5 py-1 rounded bg-slate-100 font-bold"
+                                >
+                                  Inspect
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              )
+            )}
+          </main>
+
+          {/* Details Modal */}
+          {selectedComplaint && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+              <div className="bg-white rounded-2xl border shadow-xl w-full max-w-lg p-6 space-y-4">
+                <div className="flex justify-between items-center border-b pb-3">
+                  <span className="font-mono text-xl font-bold text-blue-600">{selectedComplaint.complaintId}</span>
+                  <button onClick={() => setSelectedComplaint(null)} className="font-bold text-slate-400 hover:text-slate-700">✕</button>
+                </div>
+                <div className="text-xs space-y-2">
+                  <div><strong>Student:</strong> {selectedComplaint.studentName} ({selectedComplaint.department})</div>
+                  <div><strong>Category:</strong> {selectedComplaint.category}</div>
+                  <div><strong>Location:</strong> {selectedComplaint.location}</div>
+                  <div><strong>Description:</strong> {selectedComplaint.description}</div>
+                  <div className="pt-2">
+                    <span className="font-bold block mb-1">Update Status:</span>
+                    <div className="flex gap-2">
+                      {['Pending', 'In Progress', 'Resolved'].map(st => (
+                        <button
+                          key={st}
+                          onClick={() => handleStatusChange(selectedComplaint.complaintId, st)}
+                          className={`flex-1 py-1.5 rounded font-bold border ${selectedComplaint.status === st ? 'bg-blue-600 text-white' : 'bg-slate-50'}`}
+                        >
+                          {st}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {toastMsg && (
+            <div className="fixed bottom-5 right-5 z-50 bg-slate-900 text-white px-4 py-3 rounded-xl text-xs font-bold shadow-xl">
+              {toastMsg}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

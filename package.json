@@ -1,0 +1,25 @@
+{
+  "name": "smart-campus-complaint-management-system",
+  "version": "1.0.0",
+  "description": "Smart Campus Complaint Management System Using AI - Full MERN Stack Application",
+  "scripts": {
+    "install:all": "npm --prefix backend install && npm --prefix frontend install",
+    "server": "npm --prefix backend start",
+    "server:dev": "npm --prefix backend run dev",
+    "client": "npm --prefix frontend run dev",
+    "seed": "npm --prefix backend run seed",
+    "build:client": "npm --prefix frontend run build"
+  },
+  "keywords": [
+    "smart-campus",
+    "complaint-management",
+    "ai-triage",
+    "mern",
+    "mongodb",
+    "express",
+    "react",
+    "vite"
+  ],
+  "author": "Smart Campus AI Team",
+  "license": "MIT"
+}
